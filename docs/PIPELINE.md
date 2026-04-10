@@ -57,3 +57,7 @@ A RAG adatbázisunk és a nyílt forráskódú könyvtáraink (OpenCV, MMCV, ONN
 ---
 
 A GUI-n (Felhasználói felületen) ezek a korszakok **Profilokként (Presets)** is kiválaszthatók lesznek, amelyek automatikusan beállítják a megfelelő csővezetéket és a csúszkák (kontraszt, gamma, RGB) kezdőértékeit.
+
+---
+## Környezet és Kontextus (Context-Aware Logic)
+Minden korszak esetében (legyen az I. vh. vagy 80-as évek) a beavatkozások előtt és alatt a rendszer képes **környezetfelismerésre** (Segment Anything - SAM) és **mélységérzékelésre** (MiDaS). Ez garantálja, hogy a "beautification" helyett a **valóság restaurálása** történjen: a háttér, az égbolt vagy az öltözék anyaga az optikai és térbeli tulajdonságainak megfelelően módosul.

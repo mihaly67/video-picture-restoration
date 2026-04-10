@@ -51,3 +51,15 @@ Százéves, alulexponált vagy életlen (out-of-focus) képek esetén az emberi 
     - Nagyobb `w` érték (pl. 0.7 - 1.0): **Magas hűség (High-Fidelity).** A modell erősebben ragaszkodik az eredeti bemenethez. Dédnagyszülők homályos képeinél ez a preferált, mivel megtartja a felismerhetőséget, még ha kicsit "zajosabb" is marad a végeredmény.
 - **Illesztés (Blending):**
   - A feljavított arcokat a rendszer a széleken dinamikus Gauss-elmosással (Gaussian Blur) és erózióval mossa vissza az eredeti háttérbe, hogy ne legyen látható "maszk-vonal".
+
+## 5. Környezetfelismerés, Szegmentálás és Mélység (Context-Aware Restoration)
+A történelmi fotók hiteles (nem "műanyag") restaurálásához elengedhetetlen, hogy az AI tisztában legyen a kép tartalmával (pl. mi az égbolt, mi az ember, mi van a háttérben).
+
+- **Segment Anything (SAM):**
+  - A RAG adatbázisban (pl. `sdnext` modulok között) megtalálható a Meta-féle SAM modell. Ez képes a képet automatikusan "értelmes" szegmensekre bontani (fű, ég, egyenruha, fegyver, arc).
+  - **Felhasználás a csővezetékben:** Kolorizációnál vagy háttér-zajszűrésnél ez kritikus. Például a háttér zaja elmosható úgy, hogy a SAM által izolált főszereplő élessége és textúrája sértetlen marad.
+- **Mélységérzékelés (MiDaS):**
+  - A 2D kép térbeliségének megértése (Depth Estimation). Képes egy szürkeárnyalatos mélységtérképet (depth map) generálni, ahol a közelebbi tárgyak világosabbak, a távolabbiak sötétebbek.
+  - **Felhasználás:** Segíthet a fókusz-korrekciókban, vagy a mesterséges elmosás (bokeh) elkerülésében, hogy a restaurált kép optikailag helyes maradjon.
+- **Hibafelismerés és Behelyettesítés (Inpainting & SwinIR/CodeFormer):**
+  - Bár a fizikai karcok és szakadások detektálását sokszor manuális maszkkal segítik, a RAG által indexelt SwinIR transzformerek és a CodeFormer inpainting moduljai képesek a "hiányzó" vagy defektes adatokat (karcolások, porszemcsék) a környező struktúrák (kontextus) alapján hitelesen újragenerálni.
