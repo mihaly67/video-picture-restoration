@@ -1,0 +1,13 @@
+# AI Engine
+onnxruntime>=1.15.0
+
+# Képfeldolgozás
+opencv-python-headless>=4.8.0
+numpy>=1.21.0
+Pillow>=9.0.0
+
+# Rendszer és erőforrás menedzsment
+psutil>=5.9.0
+
+# GUI
+gradio>=4.0.0
