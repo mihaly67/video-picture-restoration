@@ -1,0 +1,5 @@
+
+# RAG Database (FAISS) és csomagok
+Knowledge_Base/
+*.zip
+*.jsonl
