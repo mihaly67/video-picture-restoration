@@ -38,3 +38,16 @@ A rendszer jelentősen támaszkodik a nyílt forráskódú számítógépes lát
 
 ## Összegzés a Fejlesztéshez
 Nem kell "Photoshopot" újraírnunk. A 16GB RAM limitünkön belül is biztonságosan használhatjuk a már rendelkezésre álló **MMCV** és **OpenCV** algoritmusokat (amelyek az `opencv-python-headless` csomagunk részei). A GUI-ban létre tudunk hozni csúszkákat a kontrasztra, gamma-korrekcióra, HSV-re, amelyek a RAG-ban talált optimalizált, CPU-n is rendkívül gyors matematikai funkciókat hívják meg a képcsempéken (tiles), mielőtt vagy miután azokat átengedjük az AI modellen.
+
+## 4. Arcrekonstrukció és Felismerés (Arc helyreállítás)
+Százéves, alulexponált vagy életlen (out-of-focus) képek esetén az emberi arcok helyreállítása külön AI folyamatot igényel. A RAG adatbázis ezen a téren is tartalmaz professzionális modelleket (CodeFormer, GFPGAN).
+
+- **Arcdetektálás (Face Detection):**
+  - A rendszer képes több arcfelismerő motort használni. A hagyományos detektorok mellett elérhető a `dlib` könyvtár is, ami lassabb, de jóval pontosabb **személyazonosság-megőrzést (identity preservation)** biztosít (azaz nem téveszti el az apróbb arcvonásokat).
+  - Az arcok geometriai transzformációja (Warp & Crop) az 5 és 68 pontos landmark-elemzéssel (szem, száj, orr pozíciók) történik, így az arc a generálás során pontosan a helyére kerül vissza (`inverse_affine_matrices`).
+- **Restaurálás és Identity Preservation (CodeFormer / GFPGAN):**
+  - **Fidelity Weight (w paraméter):** A CodeFormer modell rendelkezik egy kulcsfontosságú `w` paraméterrel (0 és 1 között), ami megoldja a "túlgenerált idegen arc" problémáját:
+    - Kisebb `w` érték (pl. 0.5 alatt): A modell agresszívebben "javít", simább, szebb textúrát ad, de az arc elvesztheti az eredeti vonásait (idegenné válhat).
+    - Nagyobb `w` érték (pl. 0.7 - 1.0): **Magas hűség (High-Fidelity).** A modell erősebben ragaszkodik az eredeti bemenethez. Dédnagyszülők homályos képeinél ez a preferált, mivel megtartja a felismerhetőséget, még ha kicsit "zajosabb" is marad a végeredmény.
+- **Illesztés (Blending):**
+  - A feljavított arcokat a rendszer a széleken dinamikus Gauss-elmosással (Gaussian Blur) és erózióval mossa vissza az eredeti háttérbe, hogy ne legyen látható "maszk-vonal".
