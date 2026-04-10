@@ -24,6 +24,9 @@ A rendszer három fő rétegből áll:
   - Valós idejű erőforrás-monitorozás (RAM/CPU kijelzés).
   - "Low-resource" (Alacsony erőforrású) mód: Kép-előnézetek generálásának letiltása futás közben a memória megtakarítása érdekében.
 
+n### Képfeldolgozási Csővezeték (Pipeline)
+A részletes, történelmi korszakokra bontott (I-II. világháborús fekete-fehér, 70-es évekbeli analóg színes, és korai digitális) képfeldolgozási és restaurációs lépéseket a [PIPELINE.md](PIPELINE.md) dokumentum tartalmazza.
+
 ---
 
 ## Fejlesztési Lépések (Roadmap)
