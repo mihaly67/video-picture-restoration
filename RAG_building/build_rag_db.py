@@ -66,7 +66,7 @@ def process_jsonl_files(work_dir):
 def main():
     print("=== 🧠 AI PICTURE & VIDEO RESTORATION - FAISS/SQLITE RAG BUILDER ===")
 
-    work_dir = get_script_dir()
+    work_dir = os.path.dirname(get_script_dir())
     jsonl_files = process_jsonl_files(work_dir)
     if not jsonl_files:
         return

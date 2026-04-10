@@ -12,7 +12,7 @@ A rendszer és az ahhoz tartozó hatalmas adatbázis beállítása teljesen auto
 Lépj be a könyvtárba, majd futtasd a telepítő scriptet:
 
 ```bash
-python3 restore_env_pv.py
+python3 tools/restore_env_pv.py
 ```
 
 **Mit csinál a script?**

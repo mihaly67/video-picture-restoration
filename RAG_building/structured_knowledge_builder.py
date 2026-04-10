@@ -114,7 +114,7 @@ def process_single_file(filepath):
         return None
 
     # Útvonal felbontása (Repo -> Almappák -> Fájl)
-    script_dir = get_script_dir()
+    script_dir = os.path.dirname(get_script_dir())
     rel_path = os.path.relpath(filepath, script_dir)
     parts = Path(rel_path).parts
     source_repo = parts[0] if parts else "Unknown"
@@ -157,7 +157,7 @@ def collect_files_from_repos(base_path, repo_names):
 def main():
     print("=== 🧠 AI PICTURE & VIDEO RESTORATION - STRUKTURÁLT KNOWLEDGE BUILDER ===")
 
-    work_dir = get_script_dir()
+    work_dir = os.path.dirname(get_script_dir())
     output_jsonl = os.path.join(work_dir, OUTPUT_FILE)
     output_zip = os.path.join(work_dir, OUTPUT_ZIP)
     output_list = os.path.join(work_dir, OUTPUT_LIST)

@@ -99,7 +99,7 @@ def process_resource(key, config):
     print(f"\n🔧 Feldolgozás: {key}...")
 
     # Resolving absolute path relative to script directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     target_dir = os.path.join(script_dir, config.get("extract_to"))
 
     check_file = config.get("check_file")

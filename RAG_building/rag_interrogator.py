@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--neighborhood", action="store_true", help="Keresse ki a megelőző és következő ROWID-t is")
     args = parser.parse_args()
 
-    work_dir = get_script_dir()
+    work_dir = os.path.dirname(get_script_dir())
     db_dir = os.path.join(work_dir, "Knowledge_Base", "RAG_DB")
 
     index_path = os.path.join(db_dir, "video_picture_restoration_compressed.index")
