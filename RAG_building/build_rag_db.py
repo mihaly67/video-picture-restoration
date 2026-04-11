@@ -66,7 +66,8 @@ def process_jsonl_files(work_dir):
 def main():
     print("=== 🧠 AI PICTURE & VIDEO RESTORATION - FAISS/SQLITE RAG BUILDER ===")
 
-    work_dir = os.path.dirname(get_script_dir())
+    # Mindig azt a mappát pásztázza, ahonnan a parancsot kiadták (Current Working Directory)
+    work_dir = os.getcwd()
     jsonl_files = process_jsonl_files(work_dir)
     if not jsonl_files:
         return
