@@ -28,6 +28,9 @@ A rendszer logikailag és strukturálisan is kettéválasztja a fotók (`src/ima
 n### Képfeldolgozási Csővezeték (Pipeline)
 A részletes, történelmi korszakokra bontott (I-II. világháborús fekete-fehér, 70-es évekbeli analóg színes, és korai digitális) képfeldolgozási és restaurációs lépéseket a [PIPELINE.md](PIPELINE.md) dokumentum tartalmazza.
 
+n### Hardver-Szintű Optimalizációk (AM3 / 16GB RAM)
+A szigorú memórialimitet, az AVX hiányát, valamint az ONNX és aszinkron (FastAPI/VapourSynth) futtatókörnyezet mélyebb technikai beállításait a [HARDWARE_OPTIMIZATION.md](HARDWARE_OPTIMIZATION.md) dokumentum taglalja.
+
 ---
 
 ## Fejlesztési Lépések (Roadmap)
