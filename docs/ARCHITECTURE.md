@@ -6,7 +6,8 @@ Ez a dokumentum a kép- és videó-restaurációs alkalmazás felépítését é
 
 A rendszer három fő rétegből áll:
 
-### 1. Feldolgozó Réteg (AI Engine)
+### 1. Kép és Videó Feldolgozó Rétegek (AI Engine)
+A rendszer logikailag és strukturálisan is kettéválasztja a fotók (`src/image/`) és a mozgóképek (`src/video/`) feldolgozását, mivel a videók egyedi időbeli (temporal) menedzsmentet igényelnek.
 - **Futtatókörnyezet:** `onnxruntime` használata a hagyományos (és AVX-et gyakran megkövetelő) PyTorch helyett. Az ONNX modellek kompatibilisebbek a régebbi SSE utasításkészletekkel.
 - **Modellek:** Könnyített ("light") modellek használata (pl. Real-ESRGAN light verziók, YOLOv8-nano).
 - **Hardveres megfontolások:** Alapvetően CPU alapú inferencia, elkerülve a memóriaszivárgást és a kompatibilitási hibákat.
