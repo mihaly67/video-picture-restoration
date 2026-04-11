@@ -120,8 +120,10 @@ def process_single_file(filepath):
         return None
 
     # Útvonal felbontása (Repo -> Almappák -> Fájl)
-    script_dir = os.path.dirname(get_script_dir())
-    rel_path = os.path.relpath(filepath, script_dir)
+    # Ahhoz, hogy a metaadatokban a "source_repo" a közvetlen alkönyvtár neve legyen,
+    # a relatív utat az aktuális munkakönyvtárhoz (CWD) képest kell kiszámolni.
+    work_dir = os.getcwd()
+    rel_path = os.path.relpath(filepath, work_dir)
     parts = Path(rel_path).parts
     source_repo = parts[0] if parts else "Unknown"
 
@@ -163,7 +165,8 @@ def collect_files_from_repos(base_path, repo_names):
 def main():
     print("=== 🧠 AI PICTURE & VIDEO RESTORATION - STRUKTURÁLT KNOWLEDGE BUILDER ===")
 
-    work_dir = os.path.dirname(get_script_dir())
+    # Mindig azt a mappát pásztázza, ahonnan a parancsot kiadták (Current Working Directory)
+    work_dir = os.getcwd()
     output_jsonl = os.path.join(work_dir, OUTPUT_FILE)
     output_zip = os.path.join(work_dir, OUTPUT_ZIP)
     output_list = os.path.join(work_dir, OUTPUT_LIST)
