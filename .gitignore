@@ -3,3 +3,5 @@
 Knowledge_Base/
 *.zip
 *.jsonl
+*.db
+*.index

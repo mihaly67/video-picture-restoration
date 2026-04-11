@@ -49,7 +49,7 @@ ENVIRONMENT_RESOURCES = {
         "id": "1FQzexlqLs2HXj0VMnW-OYAfTREwJ1wI7",
         "file": "video_picture_restoration_RAG.zip",
         "extract_to": "Knowledge_Base/RAG_DB",
-        "check_file": "video_picture_restoration_knowledge.db",
+        "check_file": "video_picture_restoration.db",
         "type": "zip",
         "preserve_dir": False
     }
