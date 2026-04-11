@@ -23,7 +23,7 @@ def main():
     db_dir = os.path.join(work_dir, "Knowledge_Base", "RAG_DB")
 
     index_path = os.path.join(db_dir, "video_picture_restoration_compressed.index")
-    sqlite_path = os.path.join(db_dir, "video_picture_restoration_knowledge.db")
+    sqlite_path = os.path.join(db_dir, "video_picture_restoration.db")
     model_name = "all-MiniLM-L6-v2"
 
     if not os.path.exists(index_path) or not os.path.exists(sqlite_path):

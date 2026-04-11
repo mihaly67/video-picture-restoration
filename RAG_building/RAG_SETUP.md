@@ -18,7 +18,7 @@ python3 tools/restore_env_pv.py
 **Mit csinál a script?**
 - Feltelepíti a vektorizáláshoz szükséges Python könyvtárakat (`faiss-cpu`, `sentence-transformers`, `gdown` stb.).
 - Letölti a becsomagolt RAG adatbázist a Google Drive-ról.
-- Kicsomagolja a `Knowledge_Base/RAG_DB` mappába a `video_picture_restoration_compressed.index` és a `.db` fájlokat.
+- Kicsomagolja a `Knowledge_Base/RAG_DB` mappába a `video_picture_restoration_compressed.index` és a `video_picture_restoration.db` fájlokat.
 
 *(A RAG DB mappa és a nagy letöltött fájlok `.gitignore`-ban vannak, így véletlenül sem kerülnek be a verziókezelőbe).*
 
