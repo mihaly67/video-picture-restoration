@@ -1,56 +1,37 @@
-# Képfeldolgozó Rendszer Architektúra (AM3 / Phenom II Optimalizált)
+# RAG-Alapú AI Restaurációs Rendszer - Architektúra
 
-Ez a dokumentum a kép- és videó-restaurációs alkalmazás felépítését és a lépésenkénti fejlesztési ütemtervét rögzíti, figyelembe véve a hardveres korlátokat (AVX utasításkészlet hiánya, 16 GB RAM limit, CPU melegedés).
+## 1. Rendszer Áttekintés
+A rendszer egy átfogó, aszinkron, RAG-vezérelt restaurációs és animációs keretrendszer, amely képeket és videókat dolgoz fel. Hardveres korlátok (AMD Phenom II, 16 GB RAM) miatt aktív memóriamenedzsmenttel (Watchdogs, Tiling) és ONNX/Zero-copy (VapourSynth) technológiákkal működik.
 
-## Rendszerarchitektúra
+## 2. Architekturális Rétegek
 
-A rendszer három fő rétegből áll:
+### 2.1. GUI és Vezérlősík (Control Plane) - `src/gui/`
+- **WebUI (Gradio / NiceGUI)**: Grafikus felület a felhasználók számára (kép/videó feltöltés, munkafolyamat kiválasztása, aszinkron folyamat-visszajelzés).
+- **FastAPI Backend**: A frontend és a feldolgozó motorok közötti aszinkron API híd, amely a feladatokat ütemezi.
+- **RAG Agent Interfész**: A backend a RAG adatbázishoz fordul (`rag_interrogator.py`) az optimális modellparaméterekért (pl. fidelity weight, blending ratio).
 
-### 1. Kép és Videó Feldolgozó Rétegek (AI Engine)
-A rendszer logikailag és strukturálisan is kettéválasztja a fotók (`src/image/`) és a mozgóképek (`src/video/`) feldolgozását, mivel a videók egyedi időbeli (temporal) menedzsmentet igényelnek.
-- **Futtatókörnyezet:** `onnxruntime` használata a hagyományos (és AVX-et gyakran megkövetelő) PyTorch helyett. Az ONNX modellek kompatibilisebbek a régebbi SSE utasításkészletekkel.
-- **Modellek:** Könnyített ("light") modellek használata (pl. Real-ESRGAN light verziók, YOLOv8-nano).
-- **Hardveres megfontolások:** Alapvetően CPU alapú inferencia, elkerülve a memóriaszivárgást és a kompatibilitási hibákat.
+### 2.2. Folyamatirányító (Pipelines) - `src/pipelines/`
+A folyamatirányító összefűzi a specializált modulokat a felhasználó kérése alapján.
+- **Történelmi Restaurációs Pipeline**: MiDaS (mélység) + SAM (maszkolás) + GFPGAN/CodeFormer (Arc) + SwinIR/Real-ESRGAN (Upscale).
+- **Arc-Transzplantációs Pipeline**: FaceFusion (arccsere referenciakép alapján) -> CodeFormer (finomítás).
+- **Állókép Animációs Pipeline**: LivePortrait (statikus kép animálása vezetővideó vagy póz alapján).
 
-### 2. Logikai és Vezérlő Réteg (The "Brain")
-- **Batch Manager (Kötegelő):** Az I/O műveleteket generátorfüggvényekkel és feldolgozási sorokkal (queue) kezeli. A multiprocessing helyett a threading (vagy szekvenciális végrehajtás) javasolt, hogy elkerüljük az OS lefagyasztását.
-- **Memória-őr (Watchdog):** Aktívan figyeli a szabad RAM-ot. Ha a felhasználás eléri a ~80%-ot (kb. 12.8 GB), kényszerített memóriatisztítást (`gc.collect()`) végez. Ezenkívül a CPU túlmelegedésének elkerülése végett opcionális pihenőidőt (sleep) iktat be a műveletek közé.
-- **Tiling Engine:** Nagyobb felbontású képeket feldolgozás előtt kisebb csempékre (tiles) vágja, a darabokat egyesével küldi be az AI Engine-nek, majd összefűzi a végeredményt. Ezzel elkerülhető a RAM túltöltése.
+### 2.3. Végrehajtó Motorok (AI Engines) - `src/`
+Logikailag és funkcionálisan szétválasztott motorok:
+- **`src/image/`**: Statikus képek zajszűrése, inpainting, feljavítása.
+- **`src/video/`**: Videók időbeli konzisztenciáját tartó modellek (VRT, ProPainter) és VapourSynth MLRT.
+- **`src/face_tools/`**: Arc-specifikus megoldások (FaceFusion swap, LivePortrait animáció, GFPGAN/CodeFormer restaurálás).
+- **`src/core/`**: Tiling Engine (képdarabolás a kevés RAM miatt), Async Task Queue.
+- **`src/utils/`**: Memory Watchdog, teljesítménymérés, hardware profilozás.
 
-### 3. GUI Réteg (Felhasználói Felület)
-- **Keretrendszer:** Web-alapú felhasználói felület (`Gradio` vagy hasonló technológia), amely lehetővé teszi a könnyű hozzáférést a helyi és a távoli VPS környezetből is.
-- **Funkciók:**
-  - Fájl és mappa kiválasztása.
-  - Vizuális csővezeték (pipeline) összeállító.
-  - Valós idejű erőforrás-monitorozás (RAM/CPU kijelzés).
-  - "Low-resource" (Alacsony erőforrású) mód: Kép-előnézetek generálásának letiltása futás közben a memória megtakarítása érdekében.
+## 3. Adatáramlás (Data Flow)
+1. **Bemenet**: Felhasználó képet/videót és referenciaképeket tölt fel a GUI-n.
+2. **Kérdezés (RAG)**: A rendszer a kért művelet típusához lekérdezi a RAG adatbázisból a szükséges hyperparamétereket és workflow referenciákat.
+3. **Ütemezés**: Az Async Task Queue feldarabolja a feladatot (Tiling Engine, ha szükséges).
+4. **Feldolgozás**: A kijelölt Pipeline sorban meghívja a Végrehajtó Motorokat (pl. `face_tools/swap.py` -> `image/upscale.py`).
+5. **Kimenet**: A Memory Watchdog folyamatosan tisztítja a szemetet, a végeredményt pedig a GUI visszaküldi a felhasználónak.
 
-n### Képfeldolgozási Csővezeték (Pipeline)
-A részletes, történelmi korszakokra bontott (I-II. világháborús fekete-fehér, 70-es évekbeli analóg színes, és korai digitális) képfeldolgozási és restaurációs lépéseket a [PIPELINE.md](PIPELINE.md) dokumentum tartalmazza.
-
-n### Hardver-Szintű Optimalizációk (AM3 / 16GB RAM)
-A szigorú memórialimitet, az AVX hiányát, valamint az ONNX és aszinkron (FastAPI/VapourSynth) futtatókörnyezet mélyebb technikai beállításait a [HARDWARE_OPTIMIZATION.md](HARDWARE_OPTIMIZATION.md) dokumentum taglalja.
-
----
-
-## Fejlesztési Lépések (Roadmap)
-
-A fejlesztés során az "elefántot kisebb falatokban esszük meg":
-
-- **Fázis 1: Alap Infastruktúra és Biztonság (Jelenlegi fázis)**
-  - Projekt architektúra rögzítése, mappastruktúra véglegesítése.
-  - Alapvető csomagkövetelmények (`requirements.txt`) meghatározása.
-  - A *Memória-őr (Watchdog)* modul implementálása, amely az alkalmazás legalsó, védelmi szintje lesz.
-
-- **Fázis 2: Menedzsment és Adatáramlás**
-  - A *Batch Manager* implementálása generátorokkal a biztonságos, OOM (Out-of-Memory) nélküli I/O eléréshez.
-  - A *Tiling Engine* logikájának (darabolás és összefűzés) megírása, még valós AI modellek nélkül (képmanipulációk tesztelése OpenCV-vel).
-
-- **Fázis 3: AI Engine Integráció**
-  - Az első "light" ONNX modellek integrálása.
-  - Zajszűrő és Inpainting (behelyettesítő) csővezetékek kialakítása, amelyek már a Tiling Engine-t és a Watchdog-ot használják.
-
-- **Fázis 4: GUI Kifejlesztése**
-  - A `Gradio` felület elkészítése.
-  - A végpontok összekötése a Batch Managerrel.
-  - Erőforrás-monitor beépítése a webes felületre.
+## 4. Hardveres Optimalizációk
+- ONNX Runtime (`intra_op_num_threads` korlátozva).
+- RAM Watchdog (memóriatúlcsordulás megelőzése `gc.collect()`-tel).
+- VapourSynth (Zero-copy memory videó transzformációknál).
