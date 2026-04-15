@@ -1,65 +1,19 @@
-# AI RAG Adatbázis Képességtérkép
+# RAG Integrált Képességek
 
-A `rag_interrogator.py` futtatása során feltérképeztük a csatolt RAG (Retrieval-Augmented Generation) adatbázis tartalmát. A repók (pl. mmcv, DepictQA, VapourSynth, CodeFormer) széleskörű beépített és algoritmikus megoldásokat kínálnak a klasszikus és gépi tanulásos képmódosításhoz.
+A felmérések alapján a Rendszer az alábbi külső modulokat és technológiákat képes integrálni és vezérelni:
 
-Ezek a funkciók egyaránt alkalmazhatók adat-előkészítésként (augmentation) és a végső kimenet utófeldolgozásaként (post-processing).
+## AI Modellek és Technikák
+- **FaceFusion**: Csúcsminőségű arccsere (Face Swap) referenciaképek alapján. Beépített Frame Enhancer és Face Enhancer (GFPGAN/CodeFormer).
+- **LivePortrait**: Állóképek élethű animálása mozgásvideókkal vagy póz-sablonokkal. Retargeting control.
+- **GFPGAN / CodeFormer**: Vak archarmonizáció és feljavítás.
+- **VRT / RVRT**: Időbeli konzisztenciával rendelkező videó zajmentesítés.
+- **ProPainter / E2FGVI**: Intelligens tartalomkitöltés és eltüntetés (Inpainting) videókhoz.
+- **DeOldify / DDColor**: Automatikus, villódzásmentes színezés.
+- **SwinIR / HAT / Real-ESRGAN**: Szuperfelbontás mesterséges textúrázás nélkül.
+- **MiDaS / Segment Anything (SAM)**: Mélység- és maszkfelismerés a nem "beautification" (hamisító) környezettartó beavatkozásokhoz.
 
-## 1. Alacsony szintű / Alapvető képmanipulációk
-A rendszer jelentősen támaszkodik a nyílt forráskódú számítógépes látás könyvtárakra (pl. OpenCV, MMCV `photometric` és `geometric` modulok).
-
-- **Színterek és Csatornák kezelése (RGB / HSV / HLS / YCbCr):**
-  A repók tartalmaznak direkt csatorna transzformációkat és szeparációt. Képesek vagyunk egy képet HSV térbe konvertálni, majd izoláltan csak a Value (Fényesség) vagy Hue (Színezet) csatornát módosítani, ezután visszaalakítani RGB-be.
-- **Kontraszt és Fényesség (Brightness / Contrast):**
-  - OpenCV szintű matematikai eltolások (shift) a pixelek értékein.
-  - Automatikus kontraszt növelés (Auto-contrast).
-  - Hisztogram kiegyenlítés és CLAHE (Contrast Limited Adaptive Histogram Equalization) a sötét/világos területek (árnyékok és fénypontok) kiegyensúlyozására.
-- **Vágás és Átméretezés (Cropping / Scaling):**
-  - Fix és relatív vágás (Crop / CropAbs a VapourSynthből).
-  - Skálázó algoritmusok (`imrescale`, `imresize_like` az MMCV-ből).
-  - Patch-alapú feldolgozás (a memórialimit miatt kritikus `paired_random_crop` és `mod_crop` funkciók, pl. a CodeFormerből).
-
-## 2. Középszintű transzformációk (Színek és Fények)
-- **Fehéregyensúly és Színkorrekció:**
-  Bár dedikált "Photoshop-szintű" fehéregyensúly gomb nincs beépítve a modellekbe, a meglévő "adjust_color", "adjust_lighting" (MMCV) modulok segítségével RGB egyensúlyozás könnyen elérhető algoritmikusan.
-- **Gamma Korrekció és Fekete/Fehér pontok:**
-  - A DepictQA repó tartalmaz explicit `brightness_brighten_gamma_HSV/RGB` implementációkat.
-  - A gamma eltolásával módosítható a "mid-tone" kontraszt és szabályozhatók a sötét (árnyék) pontok kimosódása.
-- **Árnyalat és Szaturáció (Hue / Saturation):**
-  Az MMCV `adjust_hue` és az HSV csatornás matematikai szorzások (augmentation részeként) teljes kontrollt adnak a színtelítettség felett.
-- **Speciális effektusok:**
-  - Vignetta hozzáadása/eltávolítása (`brightness_vignette`).
-  - Posterization és Solarization.
-
-## 3. Magas szintű / AI Alapú funkciók (Restauráció)
-- **Zajmentesítés (Denoising) és Szuperfelbontás (Upscaling):**
-  Real-ESRGAN, BasicSR, HAT modellek állnak rendelkezésre.
-- **Maszkolás és Inpainting (Behelyettesítés):**
-  - VapourSynth `MaskedMerge` (Alpha blending / pre-multiplied alpha). Ezzel megoldható a kép specifikus rétegeinek (pl. csak a háttér, vagy csak a hibás részek) módosítása és újraintegrálása az eredeti képre.
-
-## Összegzés a Fejlesztéshez
-Nem kell "Photoshopot" újraírnunk. A 16GB RAM limitünkön belül is biztonságosan használhatjuk a már rendelkezésre álló **MMCV** és **OpenCV** algoritmusokat (amelyek az `opencv-python-headless` csomagunk részei). A GUI-ban létre tudunk hozni csúszkákat a kontrasztra, gamma-korrekcióra, HSV-re, amelyek a RAG-ban talált optimalizált, CPU-n is rendkívül gyors matematikai funkciókat hívják meg a képcsempéken (tiles), mielőtt vagy miután azokat átengedjük az AI modellen.
-
-## 4. Arcrekonstrukció és Felismerés (Arc helyreállítás)
-Százéves, alulexponált vagy életlen (out-of-focus) képek esetén az emberi arcok helyreállítása külön AI folyamatot igényel. A RAG adatbázis ezen a téren is tartalmaz professzionális modelleket (CodeFormer, GFPGAN).
-
-- **Arcdetektálás (Face Detection):**
-  - A rendszer képes több arcfelismerő motort használni. A hagyományos detektorok mellett elérhető a `dlib` könyvtár is, ami lassabb, de jóval pontosabb **személyazonosság-megőrzést (identity preservation)** biztosít (azaz nem téveszti el az apróbb arcvonásokat).
-  - Az arcok geometriai transzformációja (Warp & Crop) az 5 és 68 pontos landmark-elemzéssel (szem, száj, orr pozíciók) történik, így az arc a generálás során pontosan a helyére kerül vissza (`inverse_affine_matrices`).
-- **Restaurálás és Identity Preservation (CodeFormer / GFPGAN):**
-  - **Fidelity Weight (w paraméter):** A CodeFormer modell rendelkezik egy kulcsfontosságú `w` paraméterrel (0 és 1 között), ami megoldja a "túlgenerált idegen arc" problémáját:
-    - Kisebb `w` érték (pl. 0.5 alatt): A modell agresszívebben "javít", simább, szebb textúrát ad, de az arc elvesztheti az eredeti vonásait (idegenné válhat).
-    - Nagyobb `w` érték (pl. 0.7 - 1.0): **Magas hűség (High-Fidelity).** A modell erősebben ragaszkodik az eredeti bemenethez. Dédnagyszülők homályos képeinél ez a preferált, mivel megtartja a felismerhetőséget, még ha kicsit "zajosabb" is marad a végeredmény.
-- **Illesztés (Blending):**
-  - A feljavított arcokat a rendszer a széleken dinamikus Gauss-elmosással (Gaussian Blur) és erózióval mossa vissza az eredeti háttérbe, hogy ne legyen látható "maszk-vonal".
-
-## 5. Környezetfelismerés, Szegmentálás és Mélység (Context-Aware Restoration)
-A történelmi fotók hiteles (nem "műanyag") restaurálásához elengedhetetlen, hogy az AI tisztában legyen a kép tartalmával (pl. mi az égbolt, mi az ember, mi van a háttérben).
-
-- **Segment Anything (SAM):**
-  - A RAG adatbázisban (pl. `sdnext` modulok között) megtalálható a Meta-féle SAM modell. Ez képes a képet automatikusan "értelmes" szegmensekre bontani (fű, ég, egyenruha, fegyver, arc).
-  - **Felhasználás a csővezetékben:** Kolorizációnál vagy háttér-zajszűrésnél ez kritikus. Például a háttér zaja elmosható úgy, hogy a SAM által izolált főszereplő élessége és textúrája sértetlen marad.
-- **Mélységérzékelés (MiDaS):**
-  - A 2D kép térbeliségének megértése (Depth Estimation). Képes egy szürkeárnyalatos mélységtérképet (depth map) generálni, ahol a közelebbi tárgyak világosabbak, a távolabbiak sötétebbek.
-  - **Felhasználás:** Segíthet a fókusz-korrekciókban, vagy a mesterséges elmosás (bokeh) elkerülésében, hogy a restaurált kép optikailag helyes maradjon.
-- **Hibafelismerés és Behelyettesítés (Inpainting & SwinIR/CodeFormer):**
-  - Bár a fizikai karcok és szakadások detektálását sokszor manuális maszkkal segítik, a RAG által indexelt SwinIR transzformerek és a CodeFormer inpainting moduljai képesek a "hiányzó" vagy defektes adatokat (karcolások, porszemcsék) a környező struktúrák (kontextus) alapján hitelesen újragenerálni.
+## Rendszer és Keretrendszer (Framework)
+- **FastAPI**: Aszinkron task menedzsment a háttérben futó nehéz ONNX inferenciák köré.
+- **VapourSynth**: A videó keretek zéró-kópiás transzformációs motorja, amely az MLRT kiterjesztéssel Python interfészen keresztül hajtja végre az optimalizált feladatokat.
+- **Gradio / NiceGUI**: Különböző komplexitású WebUI interakciók biztosítása (egyszerű gombnyomásostól a "Node-based" workflow szerkesztésig).
+- **Tiling Engine & RAM Watchdog**: Az alacsony hardver (16GB RAM) megóvása a feldarabolt képszámításokkal és explicit szemétgyűjtéssel.
