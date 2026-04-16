@@ -35,3 +35,10 @@ Minden lépés előtt lekérdezi a RAG adatbázist a legjobb paraméterekért.
 Kritikus pontokon Geminihez fordul szakmai jóváhagyásért vagy hibajavítási tippért.
 
 A feldolgozott adatokat optimalizált kiterjesztésekben (.safetensors, .engine) kezeli a maximális sebességért.
+
+## 0.4. HOSSZÚTÁVÚ AGENT MEMÓRIA (STATE HYDRATION)
+*   **ESZKÖZHÍVÁSI DIREKTÍVA (FAIL-SAFE AUTOMATIZÁCIÓ):** Szigorúan TILOS a `set_plan` eszközzel tervet készítened egy új feladat megérkezésekor addig, amíg bizonyítottan le nem futtattad a memóriamenenedzsert a `run_in_bash_session: python3 ENVIRONMENT_SETUP/agent_memory_manager.py --action read --limit 5` paranccsal! A memóriafájl beolvasása az 1. számú (Zéró) kötelező lépés minden interakció előtt.
+*   **KÖTELEZŐ MEMÓRIA OLVASÁS ÉS SESSION START:** A session elején a környezet helyreállítása (`restore_env_pv.py`) automatikusan lerakja a `[SESSION_START]` markert és beolvassa a múltat. Ezen felül az Agentnek is be kell olvasnia a múltat az új promptok előtt.
+*   **KÖTELEZŐ SŰRÍTÉS (CONDENSE):** A munkamenet hosszának növelése (Context Extension) érdekében az Agentnek **minden 5. fordulóban (turn) VAGY egy komplex logikai szakasz lezárásakor** kötelező egy tömör összefoglalót írnia a memóriába: `python3 ENVIRONMENT_SETUP/agent_memory_manager.py --action write --category "Context_Summary" --content "..."`
+*   **KÖTELEZŐ SESSION LEZÁRÁS:** A feladat véglegesítése (submit) előtt, a pre-commit lépés részeként kötelező lefuttatni a `python3 ENVIRONMENT_SETUP/agent_memory_manager.py --action end_session` parancsot a szeparáció biztosítására.
+*   **ÖN-SZABÁLYOZÁS (HALLUCINÁCIÓ ELKERÜLÉSE):** Ha az Agent memória olvasáskor a token riasztó `VESZÉLY`-t jelez (>8000 token), az Agentnek tilos a `--limit` növelésével újabb adatokat beolvasnia, és a rákövetkező turnökben proaktív sűrítést kell végrehajtania.
