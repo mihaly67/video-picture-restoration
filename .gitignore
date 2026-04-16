@@ -1,7 +1,9 @@
-
 # RAG Database (FAISS) és csomagok
-Knowledge_Base/
 *.zip
-*.jsonl
 *.db
 *.index
+
+# Engedjük a jsonl, és a knowledge base maps mappát
+!*.jsonl
+!Knowledge_Base/KNOWLEDGE_MAPS/
+!Knowledge_Base/agent_memory.jsonl
