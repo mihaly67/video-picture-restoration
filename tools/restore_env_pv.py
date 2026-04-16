@@ -45,6 +45,15 @@ except ImportError:
 
 # --- KONFIGURÁCIÓ ---
 ENVIRONMENT_RESOURCES = {
+    "RAG_CHATBOT_CSV_DATA_LLM_SKILL_RAG": {
+        "id": "1hNl4JYrms427u94H48kpkb39OJ5C5AhN",
+        "file": "RAG_CHATBOT_CSV_DATA_LLM_SKILL_RAG.zip",
+        "extract_to": "Knowledge_Base/RAG_DB",
+        "check_file": "RAG_CHATBOT_CSV_DATA_LLM_github.db",
+        "type": "zip",
+        "preserve_dir": False
+    },
+
     "VIDEO_PICTURE_RESTORATION_RAG": {
         "id": "1FQzexlqLs2HXj0VMnW-OYAfTREwJ1wI7",
         "file": "video_picture_restoration_RAG.zip",
