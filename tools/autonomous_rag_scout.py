@@ -4,110 +4,109 @@ import re
 import sys
 
 # Hozzáférés az Agent Memória Menedzserhez (hogy naplózhassuk a találatokat)
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from agent_memory_manager import write_memory
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from ENVIRONMENT_SETUP.agent_memory_manager import write_memory
 
 def run_autonomous_scout():
     """
-    Ez az a script, amit a Felhasználó távollétében egy Cron-job futtat a VPS-en (Scheduled Task).
-    Célja: Végignyálazni a megadott (érintetlen) repókat az SQLite RAG-ból,
-    kikeresni belőlük a kulcsfontosságú (Adatbázis elemzés, CSV chatbot, MCP optimalizáció) funkciókat.
-    A redundáns vagy irreleváns kódot eldobja.
-    Az eredményt egyenesen a Hosszútávú Memóriába (agent_memory.jsonl) írja "Auto_Scout_Report" néven,
-    hogy amikor a Felhasználó géphez ül, azonnal a kész elemzés várja.
+    Végignyálazza a Video Restauráló RAG adatbázist, és mélyfúrással feltérképezi,
+    hogy "mi mire való". Kigyűjti a fájlokat, azok README leírásait,
+    vagy az osztályok docstringjeit.
     """
-    print("🤖 AUTONÓM FELDERÍTŐ INDÍTÁSA (Scheduled Task Szimuláció)...")
+    print("🤖 AUTONÓM FELDERÍTŐ INDÍTÁSA (Deep Drill a Videó Restauráló RAG-on)...")
 
-    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Knowledge_Base", "AI_TOOLS_DB", "RAG_CHATBOT_CSV_DATA_LLM_github.db")
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Knowledge_Base", "RAG_DB", "video_picture_restoration_knowledge.db")
 
     if not os.path.exists(db_path):
         print(f"❌ Adatbázis nem található: {db_path}")
         return
 
-    # Azok a repók, amiket meg kell vizsgálnunk (amik kimaradtak a Memória és Jules fúrásokból)
-    target_repos = [
-        "linear-master",
-        "postgres-mcp-main",
-        "puppeteer-mcp-server-main",
-        "servers-main",
-        "context7-master"
-    ]
-
-    print(f"🔍 Célzott Repók: {', '.join(target_repos)}")
-
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # 1. Kigyűjtjük az OOM-biztos SQL paranccsal az érdekes fájlokat
-    placeholders = ','.join(['?'] * len(target_repos))
-    query = f"SELECT source_repo, filepath, content FROM rag_data WHERE source_repo IN ({placeholders}) AND filepath LIKE '%.py'"
-
+    # Lekérdezzük az összes fájlt
     try:
-        cursor.execute(query, target_repos)
+        cursor.execute("SELECT source_repo, filepath, file_type, content FROM rag_data ORDER BY source_repo, filepath")
         rows = cursor.fetchall()
     except Exception as e:
         print(f"Hiba az SQL lekérdezésben: {e}")
         conn.close()
         return
 
-    print(f"📂 {len(rows)} releváns Python fájl kinyerve az adatbázisból.")
-
-    report_lines = []
-    report_lines.append("Autonóm Felderítő (Scheduled Task) Jelentés az 'Ultimate RAG' érintetlen MCP és DB repóiról:\n")
-
-    # Kulcsszavak, amikre vadászunk (Adatbázis elemzés, Grafikon, CSV, MCP)
-    db_keywords = re.compile(r"sql|query|table|schema|database|postgres|explain", re.IGNORECASE)
-    mcp_keywords = re.compile(r"mcp|server|tool|client|call_tool", re.IGNORECASE)
+    print(f"📂 {len(rows)} fájldarab kinyerve az adatbázisból feldolgozásra.")
 
     repo_insights = {}
 
-    # "Ami nem az (nem releváns), azzal nem foglalkozol" -> Szűrés
-    for repo, filepath, content in rows:
+    for repo, filepath, file_type, content in rows:
         if not content: continue
 
-        is_relevant = False
-        findings = []
+        if repo not in repo_insights:
+            repo_insights[repo] = {"description": "Nincs elérhető README összegzés.", "files": {}}
 
-        # Vizsgáljuk meg a fájl tartalmát
-        if repo == "postgres-mcp-main":
-            if "top_queries" in filepath or "explain" in filepath:
-                is_relevant = True
-                findings.append("Megtaláltam az 'EXPLAIN PLAN' és 'TOP QUERIES' SQL performancia elemző MCP toolokat! Ez lenyűgöző az adatbázis (vagy CSV/SQLite) RAG optimalizálásunkhoz: az Agent képes lehet az MCP-n keresztül lekérdezni a saját SQL lekérdezései sebességét (pl. rag_scout) és önkorrigálni!")
+        # Fájl szintű feldolgozás
+        if filepath not in repo_insights[repo]["files"]:
+            repo_insights[repo]["files"][filepath] = ""
 
-        elif repo == "servers-main":
-            if "git" in filepath:
-                 is_relevant = True
-                 findings.append("Találtam egy komplett 'Git MCP Szervert' (git_commit, git_checkout, git_diff toolokkal). Ez forradalmasíthatja az én (Jules) GitHub PR kezelésemet: Bash scriptek írása helyett MCP hívásokkal, strukturált JSON-ben intézhetem a git verziókövetést a VPS-en!")
+        # 1. Repo szintű leírás kinyerése (README.md fájlokból)
+        if filepath.endswith("README.md") and file_type.lower() == "documentation":
+            # Az első pár mondat a README-ből
+            match = re.search(r"#(.*?)(?:\n\n|\Z)", content, re.DOTALL)
+            if match:
+                desc = match.group(0).strip().replace('\n', ' ')
+                # Ha még nagyon rövid, próbálunk kicsit többet
+                if len(desc) < 50:
+                    lines = content.split('\n')
+                    desc = " ".join([l.strip() for l in lines[:10] if l.strip() and not l.startswith('[')])
 
-        elif repo == "linear-master":
-             # Ha találunk bármit (Linear egy issue tracker)
-             if "issue" in content.lower():
-                 is_relevant = True
-                 findings.append("A 'Linear' MCP szerver integrációját megtaláltam. Ez kiegészítheti a jules-skills 'automate-github-issues' tudását, lehetővé téve, hogy ne csak GitHubról, hanem Linear táblákból is automatikusan vegyek fel (Scheduled) ticketeket a háttérben.")
+                # Hozzáadjuk, de csak az első legfontosabb részt (max 500 karakter)
+                repo_insights[repo]["description"] = desc[:500] + ("..." if len(desc) > 500 else "")
 
-        if is_relevant:
-            if repo not in repo_insights:
-                repo_insights[repo] = set()
-            for f in findings:
-                repo_insights[repo].add(f)
+        # 2. Fájl szintű tudás kinyerése (Python / Kód Docstringek)
+        if filepath.endswith(".py"):
+            # Keresünk docstringet (tripla idézőjeles kommenteket) ami leírja, mit csinál a fájl/osztály
+            doc_match = re.search(r'"""(.*?)"""', content, re.DOTALL)
+            if doc_match:
+                file_desc = doc_match.group(1).strip().replace('\n', ' ')
+                # Csak a lényeget
+                repo_insights[repo]["files"][filepath] = file_desc[:200] + ("..." if len(file_desc) > 200 else "")
 
     conn.close()
 
-    # 2. Összesítjük a Jelentést (Sűrítés)
-    if not repo_insights:
-        final_report = "A felderített repókban nem találtam olyan MLOps, Adatbázis Elemző vagy CSV eszközt, ami a mi szigorú szűrési feltételeinknek megfelelt volna."
-    else:
-        for repo, insights in repo_insights.items():
-            report_lines.append(f"🔹 {repo}:")
-            for insight in insights:
-                report_lines.append(f"  - {insight}")
-        final_report = "\n".join(report_lines)
+    # Jelentés építése
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Knowledge_Base", "KNOWLEDGE_MAPS")
+    os.makedirs(out_dir, exist_ok=True)
+    report_file = os.path.join(out_dir, "video_restoration_deep_drill.md")
 
-    print("\n" + final_report + "\n")
+    with open(report_file, 'w', encoding='utf-8') as f:
+        f.write("# 🔬 AUTONÓM MÉLYFÚRÁS (Deep Drill Report)\n")
+        f.write("Adatbázis: video_picture_restoration_knowledge.db\n\n")
 
-    # 3. Kiírjuk a Hosszútávú Memóriába (Mint egy jó Autonóm Agent)
-    write_memory("Auto_Scout_Report", final_report)
-    print("✅ Autonóm Felderítés befejezve. Tanulságok a memóriában!")
+        for repo in sorted(repo_insights.keys()):
+            f.write(f"## 📦 REPO: {repo}\n")
+            f.write(f"**Funkció / Leírás:** {repo_insights[repo]['description']}\n\n")
+            f.write("**Kritikus Fájlok és Szerepük:**\n")
+
+            # Csak azokat a fájlokat írjuk ki, amiknek sikerült leírást/docstringet kinyerni, vagy nagyon fontos nevük van
+            file_count = 0
+            for filepath in sorted(repo_insights[repo]["files"].keys()):
+                desc = repo_insights[repo]["files"][filepath]
+                # Ha van leírása, kiírjuk. Ha nincs, de fontos script (nem __init__.py), akkor is listázzuk.
+                if desc:
+                    f.write(f"  - 📄 `{filepath}`: *{desc}*\n")
+                    file_count += 1
+                elif "inference" in filepath or "model" in filepath or "pipeline" in filepath or "train" in filepath:
+                     f.write(f"  - 📄 `{filepath}`: (Fő feldolgozó / logikai modul)\n")
+                     file_count += 1
+
+            if file_count == 0:
+                f.write("  - *(Nincs specifikus dokumentált Python script, valószínűleg csak C/C++ alap vagy nyers modell mappa)*\n")
+
+            f.write("\n" + "-"*40 + "\n\n")
+
+    print(f"\n✅ Autonóm Felderítés befejezve. A teljes térkép a KNOWLEDGE_MAPS mappában: {report_file}")
+
+    # Memória írás (Sűrítve)
+    write_memory("Auto_Scout_Report", f"A video restauráló RAG mélyfúrása lefutott. {len(repo_insights)} repository-t elemeztem ki, a teljes jelentés (fájl szintű leírásokkal) a KNOWLEDGE_MAPS/video_restoration_deep_drill.md fájlban van.")
 
 if __name__ == "__main__":
     run_autonomous_scout()
