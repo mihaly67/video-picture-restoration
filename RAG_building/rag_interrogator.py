@@ -25,6 +25,7 @@ def main():
     work_dir = os.path.dirname(get_script_dir())
 
     db_paths = [
+        ("Knowledge_Base/RAG_DB", "RAG_CHATBOT_CSV_DATA_LLM_github_compressed.index", "RAG_CHATBOT_CSV_DATA_LLM_github.db"),
         ("Knowledge_Base/RAG_DB", "video_picture_restoration_compressed.index", "video_picture_restoration_knowledge.db"),
         ("Knowledge_Base/RAG_DB", "video_picture_restoration_compressed.index", "video_picture_restoration.db"),
     ]
