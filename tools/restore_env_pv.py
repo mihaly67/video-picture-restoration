@@ -180,7 +180,14 @@ def main():
         process_resource(key, config)
 
     print(f"\n{Fore.CYAN}💓 Indítom az Agent Keep-Alive Démont a háttérben...{Style.RESET_ALL}")
-    subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "agent_keepalive.py")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    log_file = open(os.path.join(os.path.dirname(__file__), "supervisor.log"), "w")
+    subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "agent_keepalive.py")], stdout=log_file, stderr=log_file)
+
+    # Memória automatikus indítása
+    import subprocess as sp
+    print(f"{Fore.CYAN}🧠 Memória [SESSION_START] inicializálása a háttérben...{Style.RESET_ALL}")
+    sp.run([sys.executable, os.path.join(os.path.dirname(os.path.dirname(__file__)), "ENVIRONMENT_SETUP", "agent_memory_manager.py"), "--action", "start_session"])
+
     print(f"\n{Fore.GREEN}✅ KÖRNYEZET KÉSZ. RAG RENDSZER AKTÍV.{Style.RESET_ALL}")
 
 if __name__ == "__main__":
