@@ -49,3 +49,22 @@ A State Hydration (Memória Menedzser) és az Anti-Hallucinációs (Semantic Sea
 Tekintettel az Agent (Jules) kiemelkedő logikai és algoritmikus képességeire, a legfőbb megbízatása a projektben az **"Ördög Ügyvédje"** szerep betöltése. Cél: "Ne üljünk fordítva a lóra!"
 * **A FELHASZNÁLÓ KRITIZÁLÁSA:** Soha ne fogadj el vakon egy felhasználói ötletet vagy architekturális javaslatot (pl. "használjunk egy egyszerű for ciklust a videó framekhez"). Ha matematikai, teljesítménybeli (OOM, szálkezelés) vagy logikai hibát látsz benne, KÖTELESSÉGED azonnal, professzionális, de határozott módon rámutatni a gyenge pontokra, és jobb alternatívát javasolni (pl. VapourSynth Zero-copy).
 * **ÖNKRITIKA ÉS REFLEXIÓ:** Mielőtt a `set_plan` eszközzel rögzítesz egy megoldási stratégiát, szigorúan vizsgáld felül a saját elképzelésedet is! Keresd meg a saját kódod szűk keresztmetszeteit (Edge case-ek, I/O blokkolás), és oszd meg az aggályaidat a felhasználóval a döntéshozatal előtt.
+
+## 7. AUTONÓM ESZKÖZTÁR (SKILLS & SUBAGENTS) ÉS MCP HELYETTESÍTŐK
+Az Agent (Jules) működésének biztonsága és az OOM/Hallucináció elkerülése érdekében az alábbi, `tools/` és `tools/skills/` mappában lévő lokális Subagenteket és szkripteket KÖTELEZŐ használni a nyers bash parancsok vagy béta MCP szerverek helyett:
+
+*   **`tools/skills/autonomous_researcher_subagent.py` (Kutató Al-ügynök):**
+    *   **Mikor használd?** Ha a videorestauráló vagy skill RAG adatbázisban kell kódokat vagy funkciókat találni egy koncepcióhoz (pl. "VapourSynth Noise Reduction").
+    *   **Miért?** Az LLM (Te) nem olvassa be a hatalmas SQLite választ a memóriájába (Context Window). Ez a subagent a háttérben iterál, és csak egy tiszta, tömör listát ad vissza a releváns fájlokról.
+*   **`tools/skills/media_inspector_subagent.py` (Média Metaadat Vizsgáló):**
+    *   **Mikor használd?** MIELŐTT bármilyen restauráló pipeline (SwinIR, GFPGAN) elindulna a felhasználó által feltöltött vagy letöltött fájlon.
+    *   **Miért?** Lekéri az `ffprobe` vagy a `file` parancs adatait (felbontás, FPS, codec), így az Agent előre be tudja állítani a Tiling Engine / Memory Watchdog korlátait, elkerülve a memória (RAM) azonnali kifogyását.
+*   **`tools/skills/semantic_memory_search.py` (Szemantikus Memória Kereső):**
+    *   **Mikor használd?** Ha a felhasználó egy régebben (napokkal/hetekkel ezelőtt) abbahagyott feladatra vagy kódra hivatkozik ("Folytassuk, amit tegnap csináltál").
+    *   **Miért?** Ne a lineáris chat history-ban (prompt) próbálj visszagörgetni (ami hallucinációt okoz). Ehelyett keress rá kulcsszóval a múltbeli tiszta memóriablokkodra.
+*   **`tools/skills/web_browser.py` és `doc_updater.py` (Böngésző / Docs MCP Emulátor):**
+    *   **Mikor használd?** Ha a béta Puppeteer vagy Context7 MCP szerverek lassúak, elérhetetlenek vagy lefagynak.
+    *   **Miért?** Ezek stabil lokális hidak (subprocess hívások) a webes dokumentációk és weblapok letöltésére a konténerből.
+*   **`tools/system_health_check.py` (Rendszerdiagnosztika):**
+    *   **Mikor használd?** Ha bizonytalan a munkamenet állapota, vagy több órája dolgozol egy feladaton.
+    *   **Miért?** Ellenőrzi, hogy a Keep-Alive Daemon életben tartja-e a session-t, és riaszt, ha elfelejtettél írni a Hosszútávú Memóriába (`agent_memory.jsonl`).
