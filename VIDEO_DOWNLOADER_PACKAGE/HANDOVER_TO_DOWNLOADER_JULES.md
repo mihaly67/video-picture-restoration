@@ -16,6 +16,7 @@ A csomagban, amit kaptál, benne vannak az én (Restoration) repómhoz igazítot
 - 📄 `autonomous_rag_scout.py`: Ez a kulcs! A "Mélyfúró". Jelenleg a Video Restauráló RAG-ra és fájlokra mutat. **Tedd át a te Video Downloader RAG nevedre!** Futtasd le, hogy kinyerje a repók README leírását és a python fájlok docstringjeit egy `.md` fájlba. Ebből fogod megérteni, mi mire való nálad.
 - 📄 `autonomous_tool_builder.py`: Autonóm Tool Generátor. Jelenleg MT5, EA vagy Képrestoráló scripteket generál. **Parkolópálya:** Ezt csak *AZUTÁN* írd át (és fusson), ha a Scout már megcsinálta a letöltő RAG-od teljes mélyfúrását, és már tudod, milyen LLM/Adatbázis elemző skillekre lesz szükséged a Downloader projektedben.
 - 📄 `web_browser.py`: Lokális Puppeteer Wrapper. Ha netezned kell egy URL-en MCP nélkül, ezt használd.
+- 📄 `semantic_memory_search.py`: Szemantikus Memória Kereső. A múltbeli (akár hetekkel ezelőtti) `agent_memory_manager.py`-os sűrítések visszakeresésére, OOM/Hallucináció nélkül, időugrásra!
 
 ## 2. Kötelező Végrehajtási Lépések (Az Érkezésed Után)
 
@@ -28,6 +29,7 @@ Illeszd be a repód gyökerében lévő `AGENTS.md` (vagy `agents.md`) legvégé
 *   **KÖTELEZŐ SŰRÍTÉS (CONDENSE):** A munkamenet hosszának növelése érdekében **minden 5. fordulóban (turn) VAGY egy komplex szakasz lezárásakor** kötelező egy összefoglalót írni: `python3 ENVIRONMENT_SETUP/agent_memory_manager.py --action write --category "Context_Summary" --content "..."`
 *   **KÖTELEZŐ SESSION LEZÁRÁS:** A pre-commit lépés részeként kötelező lefuttatni a `python3 ENVIRONMENT_SETUP/agent_memory_manager.py --action end_session` parancsot.
 *   **ÖN-SZABÁLYOZÁS (HALLUCINÁCIÓ ELKERÜLÉSE):** Ha az Agent memória >8000 tokent olvas, tilos növelni a `--limit`-et, azonnal sűríteni kell!
+*   **MÚLTBELI KONTEXTUS VISSZAÁLLÍTÁSA (ANTI-HALLUCINÁCIÓ):** Ha a felhasználó egy hetekkel ezelőtti, vagy megszakított feladatra tér vissza, SZIGORÚAN TILOS a lineáris chat history-ra támaszkodni vagy találgatni! Ehelyett kötelező lefuttatni a `python3 tools/skills/semantic_memory_search.py --keyword "<téma>"` parancsot, és a visszaadott sűrített, múltbeli stratégiai memóriablokkok alapján folytatni a munkát.
 ```
 
 **LÉPÉS 2: A Scout megtisztítása és futtatása**
