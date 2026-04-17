@@ -179,6 +179,8 @@ def main():
     for key, config in ENVIRONMENT_RESOURCES.items():
         process_resource(key, config)
 
+    print(f"\n{Fore.CYAN}💓 Indítom az Agent Keep-Alive Démont a háttérben...{Style.RESET_ALL}")
+    subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "agent_keepalive.py")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print(f"\n{Fore.GREEN}✅ KÖRNYEZET KÉSZ. RAG RENDSZER AKTÍV.{Style.RESET_ALL}")
 
 if __name__ == "__main__":
